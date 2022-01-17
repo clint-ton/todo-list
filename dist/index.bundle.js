@@ -1,0 +1,1 @@
+(()=>{const e=(e=>{let o=!1;return{getDescription:()=>e,setDescription:o=>{e=o},isCompleted:()=>o,toggleCompleted:()=>{o=!o}}})("Go to the gym");console.log(e.getDescription()),e.setDescription("Do some programming"),console.log(e.getDescription())})();
