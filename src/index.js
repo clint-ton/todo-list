@@ -15,9 +15,9 @@ const taskFactory = (description) => {
   const isCompleted = () => {
     return completed;
   };
+
   const toggleCompleted = () => {
     completed = !completed;
-    console.log(isCompleted());
   };
 
   return {
@@ -39,10 +39,11 @@ const taskListFactory = (name) => {
     return tasks;
   };
 
+  // TODO: split out DOMHandler call?
   const addTask = (description) => {
     const newTask = taskFactory(description);
     tasks.push(newTask);
-    DOMHandler.createTaskItem(newTask);
+    return newTask;
   };
 
   return {
@@ -53,7 +54,7 @@ const taskListFactory = (name) => {
 };
 
 const DOMHandler = (() => {
-  const createTaskItem = (task) => {
+  const createTaskItem = (task, parent) => {
     const container = document.createElement("div");
     container.classList.add("task");
     const checkbox = document.createElement("input");
@@ -64,13 +65,22 @@ const DOMHandler = (() => {
 
     container.appendChild(checkbox);
     container.appendChild(description);
-
-    const content = document.querySelector("#content");
-
-    content.appendChild(container);
+    return container;
   };
 
-  const createEntryBox = () => {
+  const renderList = (taskList) => {
+    const contentDiv = document.getElementById("content");
+    const container = document.createElement("div");
+    container.id = taskList.getName();
+    contentDiv.appendChild(container);
+    for (let i = 0; i < taskList.getTasks().length; i++) {
+      container.appendChild(createTaskItem(taskList.getTasks()[i]));
+    }
+    createEntryBox(taskList);
+  };
+
+  const createEntryBox = (parent) => {
+    const parentDOMObject = document.getElementById(parent.getName());
     const container = document.createElement("div");
     container.classList.add("entryBox");
 
@@ -80,27 +90,61 @@ const DOMHandler = (() => {
 
     input.addEventListener("keyup", (event) => {
       if (event.key == "Enter") {
-        addTask(input.value);
+        parentDOMObject.insertBefore(
+          createTaskItem(parent.addTask(input.value)),
+          container
+        );
         input.value = "";
       }
     });
 
     button.addEventListener("click", () => {
-      addTask(input.value);
+      parentDOMObject.insertBefore(
+        createTaskItem(parent.addTask(input.value)),
+        container
+      );
       input.value = "";
     });
 
     container.appendChild(input);
     container.appendChild(button);
-
-    const content = document.querySelector("#content");
-    content.appendChild(container);
+    parentDOMObject.appendChild(container);
   };
 
   return {
     createTaskItem,
     createEntryBox,
+    renderList,
   };
 })();
 
-const mainTasks = taskListFactory("main");
+const Application = (() => {
+  const lists = {};
+
+  const addList = (name) => {
+    if (name in lists) {
+      console.log("name in use");
+      return;
+    }
+
+    lists[name] = taskListFactory(name);
+  };
+
+  const getLists = () => lists;
+
+  return {
+    addList,
+    getLists,
+  };
+})();
+
+Application.addList("mainTasks");
+
+const mainTasks = Application.getLists()["mainTasks"];
+
+mainTasks.addTask("Go to the Gym");
+mainTasks.addTask("Do Programming");
+mainTasks.addTask("Jump Rope");
+mainTasks.addTask("Play Games");
+
+DOMHandler.renderList(mainTasks);
